@@ -50,3 +50,18 @@ Note #3: all interfaces used in the contract are the default ones taken from ope
 OpenZeppelin https://github.com/OpenZeppelin/openzeppelin-contracts-ethereum-package
 
 Solution tested in Remix
+
+3. Firewall Factory
+Write a simple factory contract with built-in Firewall mechanism.
+
+The factory should be ownable and provide a public function to deploy any custom contract when
+provided with its bytecode.
+
+On success - the custom contract should be deployed and its address returned.
+On failure - an event indicating the problem should be thrown and NO contract should be created.
+
+Additionally, the factory should have a built-in firewall that decides whether a contract is allowed to be
+deployed or not. Firewall should work in a way that it is possible to whitelist contract deployment using
+its bytecode. Factories should be able to deploy only whitelisted contracts, all other ones should be
+rejected automatically as not allowed. Only a contract owner should be able to add to or remove from
+whitelist, while everyone should be able to use factory for creation of whitelisted contracts.
