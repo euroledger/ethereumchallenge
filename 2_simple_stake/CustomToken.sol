@@ -29,7 +29,7 @@ contract CustomToken is Ownable, Initializable, ERC20 {
     mapping(address => StakeStruct[]) internal _stakes;
     
     struct Balance {
-        int256 amount;
+        uint256 amount;
     }
     
     mapping (address => Balance) internal _balances;
@@ -56,7 +56,7 @@ contract CustomToken is Ownable, Initializable, ERC20 {
     function initialize(
         address sender, uint256 minTotalSupply, uint256 maxTotalSupply, uint64 stakeMinAge, uint64 stakeMaxAge,
         uint8 stakePrecision
-    ) public initializer
+    ) public initializer onlyOwner
     {
         _minTotalSupply = minTotalSupply;
         _maxTotalSupply = maxTotalSupply;
@@ -71,18 +71,18 @@ contract CustomToken is Ownable, Initializable, ERC20 {
         _stakeMinAmount = uint256(10**18);  // min stake of 1 token
     }
     
-     function stakeOf(address account) public view returns (int256) {
+     function stakeOf(address account) public view returns (uint256) {
         if (_stakes[account].length <= 0) return 0;
-        int256 stake = 0;
+        uint256 stake = 0;
 
         for (uint i = 0; i < _stakes[account].length; i++) {
-            stake += int256(_stakes[account][i].amount);
+            stake += uint256(_stakes[account][i].amount);
         }
         return stake;
     }
 
     function stakeAll() public returns (bool) {
-        _stake(_msgSender(), int256(balanceOf(_msgSender())));
+        _stake(_msgSender(), uint256(balanceOf(_msgSender())));
         return true;
     }
     
@@ -99,19 +99,21 @@ contract CustomToken is Ownable, Initializable, ERC20 {
  
     // This method should allow adding on to user's stake.
     // Any required constrains and checks should be coded as well.  
-    function _stake(address sender, int256 amount) internal {
+    function _stake(address sender, uint256 amount) internal {
         require (_balances[sender].amount >= amount, "Insufficient Funds for Stake!");
         _burn(msg.sender, uint256(amount));
         _balances[sender].amount -= amount;
-        StakeStruct memory newStake = StakeStruct(amount, block.timestamp); 
+        StakeStruct memory newStake = StakeStruct(int256(amount), block.timestamp); 
         _stakes[msg.sender].push(newStake);
     }
     
     // This method should allow withdrawing staked funds
     // Any required constrains and checks should be coded as well.
     function _unstake(address sender) internal {
-        int256 unstakeAmount = stakeOf(sender);
-        StakeStruct memory newStake = StakeStruct( - unstakeAmount, block.timestamp); 
+        uint256 unstakeAmount = stakeOf(sender);
+        
+        int256 negativeAmount = - int256(unstakeAmount);
+        StakeStruct memory newStake = StakeStruct( negativeAmount, block.timestamp); 
         _balances[sender].amount += unstakeAmount;
         _stakes[msg.sender].push(newStake);
        _mint(msg.sender, uint256(unstakeAmount));    
@@ -121,7 +123,7 @@ contract CustomToken is Ownable, Initializable, ERC20 {
     // Any required constrains and checks should be coded as well.
     // Important! Withdrawing reward should not decrease the stake, stake should be rolled over for the future automatically.
     function _reward(address sender) internal {
-        int256 posReward = int256(_getProofOfStakeReward(sender));
+        uint256 posReward = uint256(_getProofOfStakeReward(sender));
         increaseBalance(sender, posReward);
     }
     
@@ -158,12 +160,12 @@ contract CustomToken is Ownable, Initializable, ERC20 {
         return _maxInterestRate;
     }
     
-    function increaseBalance(address account, int256 amount) public {
+    function increaseBalance(address account, uint256 amount) public {
         require(account != address(0), "Balance increase from the zero address");
         _balances[account].amount += amount;
     }
 
-    function decreaseBalance(address account, int256 amount) public {
+    function decreaseBalance(address account, uint256 amount) public {
         require(account != address(0), "Balance decrease from the zero address");
         require(_balances[account].amount >= amount, "Balance decrease amount exceeds balance");
         _balances[account].amount -= amount;
